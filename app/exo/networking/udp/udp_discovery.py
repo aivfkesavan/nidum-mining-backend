@@ -20,6 +20,7 @@ class ListenProtocol(asyncio.DatagramProtocol):
     self.transport = transport
 
   def datagram_received(self, data, addr):
+    print(addr,"mmmm")
     asyncio.create_task(self.on_message(data, addr))
 
 
@@ -32,7 +33,36 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
     sock = transport.get_extra_info("socket")
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     transport.sendto(self.message.encode("utf-8"), ("<broadcast>", self.broadcast_port))
+def print_all(self):
+    print(f"""
+    node_id: {self.node_id}
+    node_port: {self.node_port}
+    listen_port: {self.listen_port}
+    broadcast_port: {self.broadcast_port}
+    create_peer_handle: {self.create_peer_handle}
+    broadcast_interval: {self.broadcast_interval}
+    discovery_timeout: {self.discovery_timeout}
+    device_capabilities: {self.device_capabilities}
+    allowed_node_ids: {self.allowed_node_ids}
+    known_peers: {self.known_peers}
+    broadcast_task: {self.broadcast_task}
+    listen_task: {self.listen_task}
+    cleanup_task: {self.cleanup_task}
+    """)
+    print(self, "jjjj")
 
+class FilteredListenProtocol(ListenProtocol):
+    def __init__(self, on_message: Callable[[bytes, Tuple[str, int]], Coroutine], allowed_ips: List[str]):
+        super().__init__(on_message)
+        self.allowed_ips = allowed_ips  # Custom list of allowed IPs
+
+    def datagram_received(self, data, addr):
+        sender_ip = addr[0]
+        if sender_ip in self.allowed_ips:
+            asyncio.create_task(self.on_message(data, addr))  # Process only allowed IPs
+        else:
+            if DEBUG_DISCOVERY >= 1:  # Optional debug output
+                print(f"Ignoring packet from unauthorized IP: {sender_ip}")
 
 class UDPDiscovery(Discovery):
   def __init__(
@@ -60,7 +90,6 @@ class UDPDiscovery(Discovery):
     self.broadcast_task = None
     self.listen_task = None
     self.cleanup_task = None
-
   async def start(self):
     self.device_capabilities = device_capabilities()
     self.broadcast_task = asyncio.create_task(self.task_broadcast_presence())
@@ -115,6 +144,7 @@ class UDPDiscovery(Discovery):
       await asyncio.sleep(self.broadcast_interval)
 
   async def on_listen_message(self, data, addr):
+    # print(addr,"lllll")
     if not data:
       return
 
@@ -170,8 +200,13 @@ class UDPDiscovery(Discovery):
         if peer_id in self.known_peers: self.known_peers[peer_id] = (self.known_peers[peer_id][0], self.known_peers[peer_id][1], time.time(), peer_prio)
 
   async def task_listen_for_peers(self):
-    await asyncio.get_event_loop().create_datagram_endpoint(lambda: ListenProtocol(self.on_listen_message), local_addr=("0.0.0.0", self.listen_port))
-    if DEBUG_DISCOVERY >= 2: print("Started listen task")
+      allowed_ips = ["100.107.84.95","100.107.249.23"]  # Add your custom IPs here
+      await asyncio.get_event_loop().create_datagram_endpoint(
+          lambda: FilteredListenProtocol(self.on_listen_message, allowed_ips),  # Pass allowed IPs
+          local_addr=("0.0.0.0", self.listen_port),  # Bind to all interfaces
+      )
+      if DEBUG_DISCOVERY >= 2: print("Started listen task with IP filtering")
+
 
   async def task_cleanup_peers(self):
     while True:
