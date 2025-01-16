@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  exo_1:
+    build:
+      context: .
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SYSTEM_VERSION_COMPAT=1
+    ports:
+      - "52415:52415"  # Expose API
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface  # Cache HF models
+    command: ["exo", "--inference-engine", "mlx"]
+    deploy:
+      resources:
+        limits:
+          cpus: '16'  # Limit to 2 CPUs
+          memory: 32g  # Limit memory to 4GB
+    networks:
+      - exo_network
+
+networks:
+  exo_network:
+    driver: bridge
