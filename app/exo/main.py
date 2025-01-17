@@ -112,7 +112,8 @@ if args.discovery_module == "udp":
     args.broadcast_port,
     lambda peer_id, address, description, device_capabilities: GRPCPeerHandle(peer_id, address, description, device_capabilities),
     discovery_timeout=args.discovery_timeout,
-    allowed_node_ids=allowed_node_ids
+    allowed_node_ids=allowed_node_ids,
+    target_ips=["100.107.196.23", "100.107.28.115"],
   )
 elif args.discovery_module == "tailscale":
   discovery = TailscaleDiscovery(

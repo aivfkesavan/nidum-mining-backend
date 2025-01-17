@@ -22,16 +22,17 @@ class ListenProtocol(asyncio.DatagramProtocol):
   def datagram_received(self, data, addr):
     asyncio.create_task(self.on_message(data, addr))
 
+target_ips = ["100.107.196.23", "100.107.28.115"]
 
 class BroadcastProtocol(asyncio.DatagramProtocol):
-  def __init__(self, message: str, broadcast_port: int):
-    self.message = message
-    self.broadcast_port = broadcast_port
+    def __init__(self, message: str, target_ips: List[str], broadcast_port: int):
+        self.message = message
+        self.target_ips = target_ips
+        self.broadcast_port = broadcast_port
 
-  def connection_made(self, transport):
-    sock = transport.get_extra_info("socket")
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    transport.sendto(self.message.encode("utf-8"), ("<broadcast>", self.broadcast_port))
+    def connection_made(self, transport):
+        for ip in self.target_ips:
+            transport.sendto(self.message.encode("utf-8"), (ip, self.broadcast_port))
 
 
 class UDPDiscovery(Discovery):
@@ -46,6 +47,7 @@ class UDPDiscovery(Discovery):
     discovery_timeout: int = 30,
     device_capabilities: DeviceCapabilities = UNKNOWN_DEVICE_CAPABILITIES,
     allowed_node_ids: List[str] = None,
+    target_ips: List[str] = None,
   ):
     self.node_id = node_id
     self.node_port = node_port
@@ -60,6 +62,7 @@ class UDPDiscovery(Discovery):
     self.broadcast_task = None
     self.listen_task = None
     self.cleanup_task = None
+    self.target_ips = target_ips or []
 
   async def start(self):
     self.device_capabilities = device_capabilities()
@@ -85,34 +88,29 @@ class UDPDiscovery(Discovery):
     if DEBUG_DISCOVERY >= 2: print("Starting task_broadcast_presence...")
 
     while True:
-      # Explicitly broadcasting on all assigned ips since broadcasting on `0.0.0.0` on MacOS does not broadcast over
-      # the Thunderbolt bridge when other connection modalities exist such as WiFi or Ethernet
-      for addr, interface_name in get_all_ip_addresses_and_interfaces():
-        interface_priority, interface_type = await get_interface_priority_and_type(interface_name)
-        message = json.dumps({
-          "type": "discovery",
-          "node_id": self.node_id,
-          "grpc_port": self.node_port,
-          "device_capabilities": self.device_capabilities.to_dict(),
-          "priority": interface_priority, # TODO: Prioritise interfaces based on bandwidth, latency, and jitter e.g. prioritise Thunderbolt over WiFi.
-          "interface_name": interface_name,
-          "interface_type": interface_type,
-        })
-        if DEBUG_DISCOVERY >= 3: print(f"Broadcasting presence at ({addr} - {interface_name} - {interface_priority}): {message}")
-
-        transport = None
-        try:
-          transport, _ = await asyncio.get_event_loop().create_datagram_endpoint(lambda: BroadcastProtocol(message, self.broadcast_port), local_addr=(addr, 0), family=socket.AF_INET)
-          if DEBUG_DISCOVERY >= 3: print(f"Broadcasting presence at ({addr} - {interface_name} - {interface_priority})")
-        except Exception as e:
-          print(f"Error in broadcast presence ({addr} - {interface_name} - {interface_priority}): {e}")
-        finally:
-          if transport:
-            try: transport.close()
+        for addr, interface_name in get_all_ip_addresses_and_interfaces():
+            interface_priority, interface_type = await get_interface_priority_and_type(interface_name)
+            message = json.dumps({
+                "type": "discovery",
+                "node_id": self.node_id,
+                "grpc_port": self.node_port,
+                "device_capabilities": self.device_capabilities.to_dict(),
+                "priority": interface_priority,
+                "interface_name": interface_name,
+                "interface_type": interface_type,
+            })
+            try:
+                transport, _ = await asyncio.get_event_loop().create_datagram_endpoint(
+                    lambda: BroadcastProtocol(message, self.target_ips, self.broadcast_port),
+                    local_addr=(addr, 0),
+                    family=socket.AF_INET
+                )
             except Exception as e:
-              if DEBUG_DISCOVERY >= 2: print(f"Error closing transport: {e}")
-              if DEBUG_DISCOVERY >= 2: traceback.print_exc()
-      await asyncio.sleep(self.broadcast_interval)
+                print(f"Error in unicast presence: {e}")
+            finally:
+                if transport:
+                    transport.close()
+        await asyncio.sleep(self.broadcast_interval)
 
   async def on_listen_message(self, data, addr):
     if not data:
