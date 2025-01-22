@@ -1,7 +1,7 @@
 import os
 import re
 from transformers import AutoTokenizer, AutoProcessor
-from exo.models import model_cards
+from nidum.models import model_cards
 
 
 def test_tokenizer(name, tokenizer, verbose=False):

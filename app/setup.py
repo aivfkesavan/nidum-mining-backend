@@ -44,11 +44,11 @@ if sys.platform.startswith("darwin") and platform.machine() == "arm64":
   install_requires.extend(extras_require["apple_silicon"])
 
 setup(
-  name="exo",
+  name="nidum",
   version="0.0.1",
   packages=find_packages(),
   install_requires=install_requires,
   extras_require=extras_require,
-  package_data={"exo": ["tinychat/**/*"]},
-  entry_points={"console_scripts": ["exo = exo.main:run"]},
+  package_data={"nidum": ["tinychat/**/*"]},
+  entry_points={"console_scripts": ["nidum = nidum.main:run"]},
 )

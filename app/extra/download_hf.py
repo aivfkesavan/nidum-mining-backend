@@ -1,6 +1,6 @@
 import argparse
 import asyncio
-from exo.download.hf.hf_helpers import download_all_files, RepoProgressEvent
+from nidum.download.hf.hf_helpers import download_all_files, RepoProgressEvent
 
 DEFAULT_ALLOW_PATTERNS = [
   "*.json",

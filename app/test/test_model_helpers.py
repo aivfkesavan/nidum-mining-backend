@@ -1,6 +1,6 @@
 import unittest
-from exo.models import get_supported_models, model_cards
-from exo.inference.inference_engine import inference_engine_classes
+from nidum.models import get_supported_models, model_cards
+from nidum.inference.inference_engine import inference_engine_classes
 from typing import NamedTuple
 
 class TestCase(NamedTuple):

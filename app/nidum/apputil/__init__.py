@@ -1,0 +1,1 @@
+from nidum.apputil.anim import create_animation_mp4

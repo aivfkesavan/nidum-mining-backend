@@ -6,7 +6,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 import asyncio
-from exo.download.hf.hf_helpers import get_weight_map
+from nidum.download.hf.hf_helpers import get_weight_map
 
 async def test_get_weight_map():
   repo_ids = [

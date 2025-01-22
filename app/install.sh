@@ -12,7 +12,7 @@ if command -v python3.12 &>/dev/null; then
     echo "Python 3.12 is installed, proceeding with python3.12..."
     python3.12 -m venv .venv || { echo "Error: Failed to create virtual environment with Python 3.12."; exit 1; }
 else
-    echo "The recommended version of Python to run exo is Python 3.12."
+    echo "The recommended version of Python to run nidum is Python 3.12."
     echo "However, $(python3 --version) is installed. Proceeding with $(python3 --version)..."
     python3 -m venv .venv || { echo "Error: Failed to create virtual environment with Python 3."; exit 1; }
 fi
