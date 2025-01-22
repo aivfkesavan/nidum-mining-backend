@@ -313,7 +313,7 @@ async def get_interface_priority_and_type(ifname: str) -> Tuple[int, str]:
 async def shutdown(signal, loop, server):
   """Gracefully shutdown the server and close the asyncio loop."""
   print(f"Received exit signal {signal.name}...")
-  print("Thank you for using exo.")
+  print("Thank you for using nidum.")
   print_yellow_exo()
   server_tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
   [task.cancel() for task in server_tasks]
