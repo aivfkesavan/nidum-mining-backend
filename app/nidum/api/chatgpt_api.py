@@ -10,7 +10,7 @@ from aiohttp import web
 import aiohttp_cors
 import traceback
 import signal
-from exo import DEBUG, VERSION
+from nidum import DEBUG, VERSION
 from nidum.download.download_progress import RepoProgressEvent
 from nidum.helpers import PrefixDict, shutdown, get_exo_images_dir
 from nidum.inference.tokenizers import resolve_tokenizer

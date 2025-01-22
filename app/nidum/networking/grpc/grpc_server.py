@@ -5,7 +5,7 @@ from asyncio import CancelledError
 
 from . import node_service_pb2
 from . import node_service_pb2_grpc
-from exo import DEBUG
+from nidum import DEBUG
 from nidum.inference.shard import Shard
 from nidum.orchestration import Node
 import json

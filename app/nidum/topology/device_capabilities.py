@@ -1,6 +1,6 @@
 from typing import Any
 from pydantic import BaseModel
-from exo import DEBUG
+from nidum import DEBUG
 import subprocess
 import psutil
 

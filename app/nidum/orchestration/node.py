@@ -10,7 +10,7 @@ from nidum.inference.inference_engine import InferenceEngine, Shard
 from nidum.topology.topology import Topology
 from nidum.topology.device_capabilities import device_capabilities
 from nidum.topology.partitioning_strategy import Partition, PartitioningStrategy, map_partitions_to_shards
-from exo import DEBUG
+from nidum import DEBUG
 from nidum.helpers import AsyncCallbackSystem
 from nidum.viz.topology_viz import TopologyViz
 from nidum.download.hf.hf_helpers import RepoProgressEvent
