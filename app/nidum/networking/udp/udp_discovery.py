@@ -8,7 +8,7 @@ from nidum.networking.discovery import Discovery
 from nidum.networking.peer_handle import PeerHandle
 from nidum.topology.device_capabilities import DeviceCapabilities, device_capabilities, UNKNOWN_DEVICE_CAPABILITIES
 from nidum.helpers import DEBUG, DEBUG_DISCOVERY, get_all_ip_addresses_and_interfaces, get_interface_priority_and_type
-
+import websockets
 
 class ListenProtocol(asyncio.DatagramProtocol):
   def __init__(self, on_message: Callable[[bytes, Tuple[str, int]], Coroutine]):
@@ -22,8 +22,6 @@ class ListenProtocol(asyncio.DatagramProtocol):
   def datagram_received(self, data, addr):
     asyncio.create_task(self.on_message(data, addr))
 
-target_ips = ["100.107.196.23", "100.107.28.115"]
-
 class BroadcastProtocol(asyncio.DatagramProtocol):
     def __init__(self, message: str, target_ips: List[str], broadcast_port: int):
         self.message = message
@@ -34,6 +32,27 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         for ip in self.target_ips:
             transport.sendto(self.message.encode("utf-8"), (ip, self.broadcast_port))
 
+# WebSocket API details
+WEBSOCKET_URL = "ws://127.0.0.1:50062/ws" 
+
+async def get_target_ips_from_websocket(machine_id: str) -> List[str]:
+    retry_attempts = 5
+    retry_delay = 2  # seconds
+    for attempt in range(retry_attempts):
+        try:
+            async with websockets.connect(WEBSOCKET_URL) as websocket:
+                await websocket.send(json.dumps({"machine_id": machine_id}))
+                response = await websocket.recv()
+                data = json.loads(response)
+                return data.get("list_of_ips", [])
+        except Exception as e:
+            print(f"Error connecting to WebSocket server: {e}")
+            if attempt < retry_attempts - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                traceback.print_exc()
+                return []
 
 class UDPDiscovery(Discovery):
   def __init__(
@@ -43,11 +62,11 @@ class UDPDiscovery(Discovery):
     listen_port: int,
     broadcast_port: int,
     create_peer_handle: Callable[[str, str, str, DeviceCapabilities], PeerHandle],
+    machine_id: str,
     broadcast_interval: int = 2.5,
     discovery_timeout: int = 30,
     device_capabilities: DeviceCapabilities = UNKNOWN_DEVICE_CAPABILITIES,
     allowed_node_ids: List[str] = None,
-    target_ips: List[str] = None,
   ):
     self.node_id = node_id
     self.node_port = node_port
@@ -62,14 +81,15 @@ class UDPDiscovery(Discovery):
     self.broadcast_task = None
     self.listen_task = None
     self.cleanup_task = None
-    self.target_ips = target_ips or []
+    self.machine_id = machine_id
 
   async def start(self):
     self.device_capabilities = device_capabilities()
     self.broadcast_task = asyncio.create_task(self.task_broadcast_presence())
     self.listen_task = asyncio.create_task(self.task_listen_for_peers())
     self.cleanup_task = asyncio.create_task(self.task_cleanup_peers())
-
+    
+    
   async def stop(self):
     if self.broadcast_task: self.broadcast_task.cancel()
     if self.listen_task: self.listen_task.cancel()
@@ -88,6 +108,7 @@ class UDPDiscovery(Discovery):
     if DEBUG_DISCOVERY >= 2: print("Starting task_broadcast_presence...")
 
     while True:
+        target_ips = await get_target_ips_from_websocket(self.machine_id)
         for addr, interface_name in get_all_ip_addresses_and_interfaces():
             interface_priority, interface_type = await get_interface_priority_and_type(interface_name)
             message = json.dumps({
@@ -101,7 +122,7 @@ class UDPDiscovery(Discovery):
             })
             try:
                 transport, _ = await asyncio.get_event_loop().create_datagram_endpoint(
-                    lambda: BroadcastProtocol(message, self.target_ips, self.broadcast_port),
+                    lambda: BroadcastProtocol(message, target_ips, self.broadcast_port),
                     local_addr=(addr, 0),
                     family=socket.AF_INET
                 )

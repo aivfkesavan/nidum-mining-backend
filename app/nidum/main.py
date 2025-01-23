@@ -70,6 +70,7 @@ parser.add_argument("--tailscale-api-key", type=str, default=None, help="Tailsca
 parser.add_argument("--tailnet-name", type=str, default=None, help="Tailnet name")
 parser.add_argument("--node-id-filter", type=str, default=None, help="Comma separated list of allowed node IDs (only for UDP and Tailscale discovery)")
 parser.add_argument("--system-prompt", type=str, default=None, help="System prompt for the ChatGPT API")
+parser.add_argument("--machine-id", type=str, default=None, help="machine id")
 args = parser.parse_args()
 print(f"Selected inference engine: {args.inference_engine}")
 
@@ -113,7 +114,7 @@ if args.discovery_module == "udp":
     lambda peer_id, address, description, device_capabilities: GRPCPeerHandle(peer_id, address, description, device_capabilities),
     discovery_timeout=args.discovery_timeout,
     allowed_node_ids=allowed_node_ids,
-    target_ips=["100.107.40.192"],
+    machine_id=args.machine_id
   )
 elif args.discovery_module == "tailscale":
   discovery = TailscaleDiscovery(
