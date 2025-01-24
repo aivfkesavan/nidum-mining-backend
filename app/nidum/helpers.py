@@ -18,12 +18,7 @@ DEBUG = int(os.getenv("DEBUG", default="0"))
 DEBUG_DISCOVERY = int(os.getenv("DEBUG_DISCOVERY", default="0"))
 VERSION = "0.0.1"
 
-exo_text = r"""
-  _____  _____  
- / _ \ \/ / _ \ 
-|  __/>  < (_) |
- \___/_/\_\___/ 
-    """
+
 
 # Single shared thread pool for subprocess operations
 subprocess_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="subprocess_worker")
@@ -42,7 +37,7 @@ def get_system_info():
 
 
 def find_available_port(host: str = "", min_port: int = 49152, max_port: int = 65535) -> int:
-  used_ports_file = os.path.join(tempfile.gettempdir(), "exo_used_ports")
+  used_ports_file = os.path.join(tempfile.gettempdir(), "nidum_used_ports")
 
   def read_used_ports():
     if os.path.exists(used_ports_file):
@@ -73,14 +68,14 @@ def find_available_port(host: str = "", min_port: int = 49152, max_port: int = 6
   raise RuntimeError("No available ports in the specified range")
 
 
-def print_exo():
-  print(exo_text)
+# def print_exo():
+#   print(exo_text)
 
 
-def print_yellow_exo():
-  yellow = "\033[93m"  # ANSI escape code for yellow
-  reset = "\033[0m"  # ANSI escape code to reset color
-  print(f"{yellow}{exo_text}{reset}")
+# def print_yellow_exo():
+#   yellow = "\033[93m"  # ANSI escape code for yellow
+#   reset = "\033[0m"  # ANSI escape code to reset color
+#   print(f"{yellow}{exo_text}{reset}")
 
 
 def terminal_link(uri, label=None):
@@ -177,7 +172,7 @@ def is_valid_uuid(val):
 
 
 def get_or_create_node_id():
-  NODE_ID_FILE = Path(tempfile.gettempdir())/".exo_node_id"
+  NODE_ID_FILE = Path(tempfile.gettempdir())/".nidum_node_id"
   try:
     if NODE_ID_FILE.is_file():
       with open(NODE_ID_FILE, "r") as f:
@@ -314,7 +309,7 @@ async def shutdown(signal, loop, server):
   """Gracefully shutdown the server and close the asyncio loop."""
   print(f"Received exit signal {signal.name}...")
   print("Thank you for using nidum.")
-  print_yellow_exo()
+  # print_yellow_exo()
   server_tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
   [task.cancel() for task in server_tasks]
   print(f"Cancelling {len(server_tasks)} outstanding tasks")
@@ -323,21 +318,21 @@ async def shutdown(signal, loop, server):
 
 
 def is_frozen():
-  return getattr(sys, 'frozen', False) or os.path.basename(sys.executable) == "exo" \
+  return getattr(sys, 'frozen', False) or os.path.basename(sys.executable) == "nidum" \
     or ('Contents/MacOS' in str(os.path.dirname(sys.executable))) \
     or '__nuitka__' in globals() or getattr(sys, '__compiled__', False)
 
 
-def get_exo_home() -> Path:
+def get_nidum_home() -> Path:
   if psutil.WINDOWS: docs_folder = Path(os.environ["USERPROFILE"]) / "Documents"
   else: docs_folder = Path.home() / "Documents"
   if not docs_folder.exists(): docs_folder.mkdir(exist_ok=True)
-  exo_folder = docs_folder / "Exo"
+  exo_folder = docs_folder / "nidum"
   if not exo_folder.exists(): exo_folder.mkdir(exist_ok=True)
   return exo_folder
 
 def get_exo_images_dir() -> Path:
-  exo_home = get_exo_home()
+  exo_home = get_nidum_home()
   images_dir = exo_home / "Images"
   if not images_dir.exists(): images_dir.mkdir(exist_ok=True)
   return images_dir

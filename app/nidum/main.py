@@ -26,7 +26,7 @@ from nidum.topology.ring_memory_weighted_partitioning_strategy import RingMemory
 from nidum.api import ChatGPTAPI
 from nidum.download.shard_download import ShardDownloader, RepoProgressEvent, NoopShardDownloader
 from nidum.download.hf.hf_shard_download import HFShardDownloader
-from nidum.helpers import print_yellow_exo, find_available_port, DEBUG, get_system_info, get_or_create_node_id, get_all_ip_addresses_and_interfaces, terminal_link, shutdown
+from nidum.helpers import  find_available_port, DEBUG, get_system_info, get_or_create_node_id, get_all_ip_addresses_and_interfaces, terminal_link, shutdown
 from nidum.inference.shard import Shard
 from nidum.inference.inference_engine import get_inference_engine, InferenceEngine
 from nidum.inference.tokenizers import resolve_tokenizer
@@ -74,7 +74,7 @@ parser.add_argument("--machine-id", type=str, default=None, help="machine id")
 args = parser.parse_args()
 print(f"Selected inference engine: {args.inference_engine}")
 
-print_yellow_exo()
+# print_yellow_exo()
 
 system_info = get_system_info()
 print(f"Detected system: {system_info}")

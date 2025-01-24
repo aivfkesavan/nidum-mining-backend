@@ -140,7 +140,7 @@ def build_prompt(tokenizer, _messages: List[Message], tools: Optional[List[Dict]
   if tools: chat_template_args["tools"] = tools
 
   prompt = tokenizer.apply_chat_template(**chat_template_args)
-  print(f"!!! Prompt: {prompt}")
+  # print(f"!!! Prompt: {prompt}")
   return prompt
 
 
@@ -316,12 +316,13 @@ class ChatGPTAPI:
     tokenizer = await resolve_tokenizer(get_repo(shard.model_id, self.inference_engine_classname))
     prompt = build_prompt(tokenizer, messages, data.get("tools", None))
     tokens = tokenizer.encode(prompt)
-    return web.json_response({
-      "length": len(prompt),
-      "num_tokens": len(tokens),
-      "encoded_tokens": tokens,
-      "encoded_prompt": prompt,
-    })
+    result = web.json_response({
+          "length": len(prompt),
+          "num_tokens": len(tokens),
+          "encoded_tokens": tokens,
+          "encoded_prompt": prompt,
+        })
+    return result
 
   async def handle_get_download_progress(self, request):
     progress_data = {}

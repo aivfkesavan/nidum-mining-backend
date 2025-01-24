@@ -27,7 +27,7 @@ install_requires = [
   "tqdm==4.66.4",
   "transformers==4.46.3",
   "uuid==1.30",
-  "websockets==14.2"
+  "websockets",
   "tinygrad"]
 
 extras_require = {
