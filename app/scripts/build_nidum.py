@@ -49,15 +49,6 @@ def run():
             "--linux-icon=docs/nidum-rounded.png"
         ])
 
-    # Include the websockets module explicitly
-    command.extend([
-        "--include-module=websockets",
-        "--include-package=websockets",
-        "--include-module=websockets.asyncio"
-    ])
-
-    # Debugging option to show included and excluded modules
-    command.append("--show-modules")
     try:
         subprocess.run(command, check=True)
         print("Build completed!")

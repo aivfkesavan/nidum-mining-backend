@@ -8,7 +8,45 @@ from nidum.networking.discovery import Discovery
 from nidum.networking.peer_handle import PeerHandle
 from nidum.topology.device_capabilities import DeviceCapabilities, device_capabilities, UNKNOWN_DEVICE_CAPABILITIES
 from nidum.helpers import DEBUG, DEBUG_DISCOVERY, get_all_ip_addresses_and_interfaces, get_interface_priority_and_type
-import websockets
+import aiohttp
+
+BASE_API_URL = "https://apiv3.chain.nidum.ai/api/device/v3/cluster"
+
+async def get_target_ips_from_api(cluster_id: str, machine_id: str) -> List[str]:
+    retry_attempts = 5
+    retry_delay = 2  # seconds
+
+    # Construct the dynamic URL with cluster_id and machine_id
+    api_url = f"{BASE_API_URL}/{cluster_id}/{machine_id}"
+    
+    # Set the Authorization header
+ 
+
+    for attempt in range(retry_attempts):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+
+                        # Check if the cluster state is "completed"
+                        if data.get("clusterState") == "completed":
+                            return data.get("ips", [])
+                        else:
+                            print(f"Cluster state is not completed: {data.get('clusterState')}")
+                            return []
+                    else:
+                        print(f"Failed to fetch data: HTTP {response.status}")
+                        return []
+        except Exception as e:
+            print(f"Error connecting to API server: {e}")
+            if attempt < retry_attempts - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                traceback.print_exc()
+                return []
+
 
 class ListenProtocol(asyncio.DatagramProtocol):
   def __init__(self, on_message: Callable[[bytes, Tuple[str, int]], Coroutine]):
@@ -32,27 +70,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         for ip in self.target_ips:
             transport.sendto(self.message.encode("utf-8"), (ip, self.broadcast_port))
 
-# WebSocket API details
-WEBSOCKET_URL = "ws://127.0.0.1:50062/ws" 
 
-async def get_target_ips_from_websocket(machine_id: str) -> List[str]:
-    retry_attempts = 5
-    retry_delay = 2  # seconds
-    for attempt in range(retry_attempts):
-        try:
-            async with websockets.connect(WEBSOCKET_URL) as websocket:
-                await websocket.send(json.dumps({"machine_id": machine_id}))
-                response = await websocket.recv()
-                data = json.loads(response)
-                return data.get("list_of_ips", [])
-        except Exception as e:
-            print(f"Error connecting to WebSocket server: {e}")
-            if attempt < retry_attempts - 1:
-                await asyncio.sleep(retry_delay)
-                retry_delay *= 2
-            else:
-                traceback.print_exc()
-                return []
 
 class UDPDiscovery(Discovery):
   def __init__(
@@ -63,6 +81,7 @@ class UDPDiscovery(Discovery):
     broadcast_port: int,
     create_peer_handle: Callable[[str, str, str, DeviceCapabilities], PeerHandle],
     machine_id: str,
+    cluster_id: str,
     broadcast_interval: int = 2.5,
     discovery_timeout: int = 30,
     device_capabilities: DeviceCapabilities = UNKNOWN_DEVICE_CAPABILITIES,
@@ -81,7 +100,8 @@ class UDPDiscovery(Discovery):
     self.broadcast_task = None
     self.listen_task = None
     self.cleanup_task = None
-    self.machine_id = machine_id
+    self.machine_id = machine_id,
+    self.cluster_id = cluster_id
 
   async def start(self):
     self.device_capabilities = device_capabilities()
@@ -108,7 +128,7 @@ class UDPDiscovery(Discovery):
     if DEBUG_DISCOVERY >= 2: print("Starting task_broadcast_presence...")
 
     while True:
-        target_ips = await get_target_ips_from_websocket(self.machine_id)
+        target_ips = await get_target_ips_from_api(self.cluster_id, self.machine_id)
         for addr, interface_name in get_all_ip_addresses_and_interfaces():
             interface_priority, interface_type = await get_interface_priority_and_type(interface_name)
             message = json.dumps({
