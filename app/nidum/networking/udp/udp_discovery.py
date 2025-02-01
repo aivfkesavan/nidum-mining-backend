@@ -29,7 +29,7 @@ async def get_target_ips_from_api(cluster_id: str, machine_id: str) -> List[str]
                 async with session.get(api_url) as response:
                     if response.status == 200:
                         data = await response.json()
-
+                        # print(data)
                         # Check if the cluster state is "completed"
                         if data.get("clusterState") == "completed":
                             return data.get("ips", [])
