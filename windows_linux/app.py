@@ -1,19 +1,19 @@
 
-def get_system_info():
-    data={
-    "machineConfig": {
-        "os": "macOS 15.2",
-        "architecture": "arm64",
-        "cpu": "Apple M1 Max",
-        "totalRam": "34.36 GB",
-        "storage": "NaN GB",
-        "bandwidth": "0.00 Mbps",
-        "connectionSpeed": "40 Mbps",
-        "numberOfCores": 10,
-        "ip": "192.168.1.2"
-    }
-}
-    return data
+# def get_system_info():
+#     data={
+#     "machineConfig": {
+#         "os": "macOS 15.2",
+#         "architecture": "arm64",
+#         "cpu": "Apple M1 Max",
+#         "totalRam": "34.36 GB",
+#         "storage": "NaN GB",
+#         "bandwidth": "0.00 Mbps",
+#         "connectionSpeed": "40 Mbps",
+#         "numberOfCores": 10,
+#         "ip": "192.168.1.2"
+#     }
+# }
+#     return data
 
 import os
 import sys
@@ -44,21 +44,51 @@ api_token = None
 last_message_time = None  # For websocket heartbeat tracking
 
 def get_system_info():
-    data = {
-        "machineConfig": {
-            "os": "macOS 15.2",
-            "architecture": "arm64",
-            "cpu": "Apple M1 Max",
-            "totalRam": "34.36 GB",
-            "storage": "NaN GB",
-            "bandwidth": "0.00 Mbps",
-            "connectionSpeed": "40 Mbps",
-            "numberOfCores": 10,
-            "ip": "192.168.1.2"
-        }
-    }
-    return data
+    """Dynamically fetch system details."""
+    try:
+        # Get storage details
+        disk_info = psutil.disk_usage('/')
+        total_storage = round(disk_info.total / (1024**3), 2)  # Convert to GB
 
+        # Get IP address
+        try:
+            ip_address = socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            ip_address = "Unknown"
+
+        # Get CPU name (Linux systems may not return platform.processor())
+        try:
+            cpu_info = subprocess.check_output("lscpu | grep 'Model name:'", shell=True, text=True).strip()
+            cpu_name = re.sub(r"Model name:\s+", "", cpu_info)
+        except Exception:
+            cpu_name = platform.processor() or "Unknown"
+
+        # Get bandwidth (as a placeholder)
+        bandwidth = 100  # Placeholder value, real measurement requires additional setup
+
+        # Get connection speed (Placeholder, real-world requires network testing)
+        connection_speed = 50  # Placeholder
+
+        system_info = {
+            "machineConfig": {
+                "os": f"{platform.system()} {platform.release()}",
+                "architecture": platform.machine(),
+                "cpu": cpu_name,
+                "totalRam": round(psutil.virtual_memory().total / (1024**3), 2),  # Convert to GB
+                "storage": total_storage,
+                "bandwidth": bandwidth,
+                "connectionSpeed": connection_speed,
+                "numberOfCores": psutil.cpu_count(logical=False),
+                "ip": ip_address
+            }
+        }
+
+        logging.info(f"📡 System Info: {system_info}")
+        return system_info
+
+    except Exception as e:
+        logging.error(f"Error fetching system info: {e}")
+        return {"machineConfig": {}}
 def fetch_cluster_id():
     """Call API to fetch cluster ID."""
     global cluster_id
