@@ -35,7 +35,7 @@ from nidum.viz.topology_viz import TopologyViz
 from nidum.download.hf.hf_helpers import has_hf_home_read_access, has_hf_home_write_access, get_hf_home, move_models_to_hf
 
 # parse args
-parser = argparse.ArgumentParser(description="Initialize GRPC Discovery")
+parser = argparse.ArgumentParser(description="Initialize GRPC Discovery",add_help=False)
 parser.add_argument("command", nargs="?", choices=["run", "eval", "train"], help="Command to run")
 parser.add_argument("model_name", nargs="?", help="Model name to run")
 parser.add_argument("--default-model", type=str, default=None, help="Default model")

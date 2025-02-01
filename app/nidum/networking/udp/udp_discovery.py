@@ -17,6 +17,7 @@ async def get_target_ips_from_api(cluster_id: str, machine_id: str) -> List[str]
     retry_delay = 2  # seconds
 
     # Construct the dynamic URL with cluster_id and machine_id
+    machine_id = machine_id[0]
     api_url = f"{BASE_API_URL}/{cluster_id}/{machine_id}"
     
     # Set the Authorization header
