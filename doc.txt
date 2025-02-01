@@ -1,2 +1,7 @@
 export GRPC_ENABLE_FORK_SUPPORT=false
 export TOKENIZERS_PARALLELISM=false
+
+
+#docker
+docker build -t nidum-container .
+ocker run --rm --privileged nidum-container b8pi3wh1kktenalil0o7 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2Nzg3YjcwZDNhNzY0MTA4NzFhZjU2NTYiLCJleHAiOjE3NDcwMTg5OTl9.A4G_RqoeZC27B7k4Bel08Toi61-IW09fXviCjd1ukzk"

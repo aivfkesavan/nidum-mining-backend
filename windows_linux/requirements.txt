@@ -1,0 +1,4 @@
+requests
+psutil
+speedtest-cli
+websocket-client
