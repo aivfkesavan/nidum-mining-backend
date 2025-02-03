@@ -10,7 +10,12 @@ from nidum.download.hf.hf_helpers import RepoProgressEvent
 from nidum.topology.device_capabilities import UNKNOWN_DEVICE_CAPABILITIES
 
 # Set up logging
-log_file = os.path.join(os.getcwd(), "nidum_topology.log")
+home_dir = os.path.expanduser("~")  # Get the user's home directory
+log_dir = os.path.join(home_dir, ".nidum")  # Set the log directory
+os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
+
+log_file = os.path.join(log_dir, "nidum_topology.log")  # Log file path
+
 logging.basicConfig(
     filename=log_file,
     filemode="w",  # Overwrites file on each run; change to "a" to append logs
